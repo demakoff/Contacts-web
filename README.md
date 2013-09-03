@@ -1,4 +1,4 @@
 Contacts-web
 ============
 
-Web-app for AGrytsenko <a href="https://github.com/grytsenko/contacts">contacts project</a>
+Web-app for AGrytsenko <a href="https://github.com/grytsenko/contacts">contacts project</a> 

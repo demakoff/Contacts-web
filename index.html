@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+
+    <title>Exadel Contact Service</title>
+    <!-- Bootstrap -->
+    <link href="css/bootstrap.min.css" rel="stylesheet" media="screen">
+  </head>
+  <style type="text/css">
+  .container {
+    margin-top: 50px;
+  }
+  #tablearea {
+    margin-top: 30px;
+  }
+  address {
+    padding-top: 20px;
+  }
+  tbody img {
+    height: 140px;
+    width: 140px;    
+    
+  }
+
+  .controls {
+    margin-bottom: 15px;
+  }
+  .control-group {
+    padding-top: 20px;
+  }
+  .highlight {
+    background: #C7FCEC;
+  }
+  .media-body h4 {
+    margin: 5px 0;
+    padding-top: 20px;
+  }
+  .media > a {
+    position:relative;
+    margin: 0 40px 0 20px;
+<!--[if IE]> 
+    height: 140px;
+    width: 140px;
+[endif]--> 
+  }
+
+  </style>
+  <body>
+    <script src="http://code.jquery.com/jquery-latest.js"></script>
+    <script src="js/bootstrap.min.js"></script>    
+    <script src="http://code.jquery.com/jquery-migrate-1.2.1.min.js"></script> 
+    <script>
+        var contacts = [];
+
+        $( document ).ready(function() {  
+            // *** Displaying Auth model dialog, setting focus to input ***
+            $('#loginModal').modal('show');
+            $('#loginModal').on('shown.bs.modal', function (){                
+                $('#inputEmail').focus();
+            });
+
+            // *** Authentification with inputed data ***
+            $('#loginForm').submit(function(){ 
+                auth($('#loginForm input[name="email"]').val(),$('#loginForm input[name="password"]').val());
+                return false;
+            });
+
+            // *** Push Enter key on a search form processing code ***
+            $('#appendedInputButton').keypress(function(e){
+                if(e.keyCode == 13) $('.input-append button').click();
+            });       
+        });    
+
+
+        // *** Authentification and if secceded, request to get all coworkers ***
+        function auth(email,pass){                 
+            var xhr = new XMLHttpRequest();
+            if (pass=='') { email=' '; pass=' '; }
+            xhr.open('GET', 'http://localhost:8080/contacts/coworkers.json', true, email, pass); 
+              
+            // *** Command below will disable cache saving in IE. Because Cache-control: 'no-cache' doesn`t work correctly ***
+            xhr.setRequestHeader("If-Modified-Since", "Sat, 1 Jan 2000 00:00:00 GMT");                      
+            xhr.onreadystatechange = function() {                      
+                if (xhr.readyState != 4) return;
+                if (xhr.status == 200) {
+                    contacts = JSON.parse(xhr.responseText);
+                    outputList(contacts); 
+                    $('#loginModal').modal('hide');
+                    $('.container').show();                                            
+                } else { 
+                    if (xhr.status == 401){
+                        $('#errorInvalidData').show();
+                    } else {
+                        $('#errorInvalidData').hide();
+                        $('#errorServerUnavailable').show();
+                    }                      
+                }
+            }                              
+            xhr.send();               
+        }
+
+        // *** Formatted contacts output function *** 
+        function outputList(contacts){                        
+            for (var i=0; i<contacts.length; i++){
+                $("tbody").append('<tr id="person-'+i+'"><td><div class="media"><a class="pull-left" href="#"><img class="media-object img-rounded" src="' + contacts[i].photoUrl + '" alt="'+contacts[i].firstName+'`s avatar image"></a><div class="media-body"><h4 class="media-heading"><span class="firstNameSpan">' + contacts[i].firstName + '</span> <span class="lastNameSpan">' + contacts[i].lastName + '</span></h4><address> E-mail: <a href="mailto:' + contacts[i].mail + '"><span class="mailSpan">' + contacts[i].mail + '</span></a><br/>Phone: <span class="phoneSpan"><a href="tel:' + contacts[i].phone + '">' + contacts[i].phone + '</a></span><br/>Location: <span class="locationSpan">' + contacts[i].location + '</span></address></div></div></td></tr>');
+ 
+            }
+        };       
+
+
+        // *** Filtering function checks all fields of all contact-object to find matches with inputed value 
+        // and highlights fields with found matches *** 
+        function filter(searchForm){
+            $('tbody tr:hidden').show();     
+            $('.highlight').removeClass('highlight');       
+            var inputedVal = searchForm.textinput.value;            
+            for (var i=0; i<contacts.length; i++){
+              var flag = false;
+              for(key in contacts[i]){
+                if (contacts[i][key].toLowerCase().indexOf(inputedVal.toLowerCase())>=0) {
+                  flag = true;  
+                  if (inputedVal) $("#person-"+i+" ."+key+"Span").addClass("highlight");
+                }
+              }
+              if (!flag) {                
+                  $('#person-'+i).hide();
+              }
+            }        
+        }; 
+        
+        
+  </script>
+
+     <div class="modal hide fade" id="loginModal" data-backdrop="static">      
+      <div class="modal-body">
+          <form class="form-horizontal" id="loginForm">
+              <div class="control-group">
+                  <label class="control-label" for="inputEmail">Email</label>
+                  <div class="controls">
+                      <input type="text" id="inputEmail" placeholder="Email" name="email">
+                  </div>
+                  <label class="control-label" for="inputPassword">Password</label>
+                  <div class="controls">
+                      <input type="password" id="inputPassword" placeholder="Password" name="password">
+                  </div>
+                  <div class="controls">                       
+                      <button id="loginButton" class="btn btn-primary" >Sign in</button>&nbsp;&nbsp;<span id='errorInvalidData' style="display: none; color:red;">Invalid email / password!</span><span id='errorServerUnavailable' style="display: none; color:red;">Server Unavailable!</span>
+                  </div>
+              </div>
+          </div>      
+  </div>     
+
+
+     <div class="container" style="display: none;" >
+        <div class="input-append">
+            <div class="span4"></div>
+            <form>
+                <input class="span4" id="appendedInputButton" size="20" type="text" name="textinput"><button class="btn" onclick="filter(this.form)" type="button"><i class="icon-search"></i></button>
+            </form>
+        </div><br/>
+        <div class="span3"></div>        
+        <table id="tablearea" class="table table-bordered span6">
+            <tbody align="right" id="tab">                
+            </tbody>
+        </table>
+        <div class="span3"></div>
+    </div> 
+
+
+  </body>
+</html>

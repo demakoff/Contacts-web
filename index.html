@@ -76,33 +76,75 @@
                 if(e.keyCode == 13) $('.input-group-btn button').click();
             });       
         });    
-
+        function getXmlHttp(){
+            var xmlhttp;
+            try {
+              xmlhttp = new ActiveXObject("Msxml2.XMLHTTP");
+            } catch (e) {
+              try {
+                xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+              } catch (E) {
+                xmlhttp = false;
+              }
+            }
+            if (!xmlhttp && typeof XMLHttpRequest!='undefined') {
+              xmlhttp = new XMLHttpRequest();
+            }
+            return xmlhttp;
+          }
 
         // *** Authentification and if secceded, request to get all coworkers ***
-        function auth(email,pass){                 
-            var xhr = new XMLHttpRequest();
-            if (pass=='') { email=' '; pass=' '; }
-            xhr.open('GET', 'http://localhost:8080/contacts/coworkers.json', true, email, pass); 
-              
-            // *** Command below will disable cache saving in IE. Because Cache-control: 'no-cache' doesn`t work correctly ***
-            xhr.setRequestHeader("If-Modified-Since", "Sat, 1 Jan 2000 00:00:00 GMT");                      
-            xhr.onreadystatechange = function() {                      
-                if (xhr.readyState != 4) return;
-                if (xhr.status == 200) {
-                    contacts = JSON.parse(xhr.responseText);
-                    outputList(contacts); 
-                    $('#loginModal').modal('hide');
-                    $('.container').show();                                            
-                } else { 
-                    if (xhr.status == 401){
-                        $('#errorInvalidData').show();
-                    } else {
-                        $('#errorInvalidData').hide();
-                        $('#errorServerUnavailable').show();
-                    }                      
+        function auth(email,pass){
+        // *** Init and sending request for Firefox ***
+            if ($.browser.msie) { alert('non ajax');
+                var xhr = getXmlHttp();                                
+                xhr.open('GET', 'http://localhost:8080/contacts/coworkers.json', true, email, pass); 
+                  
+                // *** Command below will disable cache saving in IE. Because Cache-control: 'no-cache' doesn`t work correctly ***
+                xhr.setRequestHeader("If-Modified-Since", "Sat, 1 Jan 2000 00:00:00 GMT");                      
+                xhr.onreadystatechange = function() {                      
+                    if (xhr.readyState != 4) return;
+                    if (xhr.status == 200) {
+                        contacts = JSON.parse(xhr.responseText);
+                        outputList(contacts); 
+                        $('#loginModal').modal('hide');
+                        $('.container').show();                                            
+                    } else { 
+                        if (xhr.status == 401){
+                            $('#errorInvalidData').show();
+                        } else {
+                            $('#errorInvalidData').hide();
+                            $('#errorServerUnavailable').show();
+                        }                      
+                    }
                 }
-            }                              
-            xhr.send();               
+            xhr.send();
+          // *** Init and sending request for Firefox ***
+            } else { alert('ajax');
+                  var request = $.ajax({            
+                      type: 'GET',                
+                      url: 'http://localhost:8080/contacts/coworkers.json',                
+                      dataType: 'json',
+                      crossDomain: true, 
+                      cache : false,                                           
+                      beforeSend: function(xhr){
+                        if (!$.browser.chrome) {xhr.setRequestHeader('Authorization', 'Basic ' + btoa(email+':'+pass));}
+                      },                       
+                  });
+                  // *** msg - array of coworkers objects, which outputs ***
+                  request.done(function(msg){
+                       contacts = msg;
+                       outputList(contacts); 
+                       $('#loginModal').modal('hide');
+                       $('.container').show();
+
+                  });    
+                  // *** If request failed, error code outputs to console ***
+                  request.fail(function(obj){
+                        console.log(obj.status);
+                        $('#errorInvalidData').show();
+                  });  
+            }
         }
 
         // *** Formatted contacts output function *** 

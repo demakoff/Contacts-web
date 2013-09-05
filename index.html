@@ -44,6 +44,7 @@
   }
 
   </style>
+<!-- *** CSS-hack sets max-width for IE < 9. Bootstrep sets it via media query, which do not support IE < 9 ***-->
   <!--[if lte IE 8]>
       <style type="text/css">
           .container {
@@ -54,28 +55,30 @@
   <body>
     <script src="http://code.jquery.com/jquery-latest.js"></script>
     <script src="http://netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
+  <!-- *** jquery-migrate imported for $.browser usage *** -->  
     <script src="http://code.jquery.com/jquery-migrate-1.2.1.min.js"></script> 
     <script>
         var contacts = [];
 
         $( document ).ready(function() {  
-            // *** Displaying Auth model dialog, setting focus to input ***
+// *** Displaying Auth model dialog, setting focus to input ***
             $('#loginModal').modal('show');
             $('#loginModal').on('shown.bs.modal', function (){                
                 $('#inputEmail').focus();
             });
 
-            // *** Authentification with inputed data ***
+// *** Authentification with inputed data ***
             $('#loginForm').submit(function(){ 
                 auth($('#loginForm input[name="email"]').val(),$('#loginForm input[name="password"]').val());
                 return false;
             });
 
-            // *** Push Enter key on a search form processing code ***
+// *** Push Enter key on a search form processing code ***
             $('#appendedInputButton').keypress(function(e){
                 if(e.keyCode == 13) $('.input-group-btn button').click();
             });       
         });    
+// *** Choosing Available httpRequest class ***
         function getXmlHttp(){
             var xmlhttp;
             try {
@@ -93,14 +96,14 @@
             return xmlhttp;
           }
 
-        // *** Authentification and if secceded, request to get all coworkers ***
+// *** Authentification and if succeeded, request to get all coworkers ***
         function auth(email,pass){
-        // *** Init and sending request for Firefox ***
-            if ($.browser.msie) { alert('non ajax');
+// *** Init and sending request for IE ***
+            if ($.browser.msie) { 
                 var xhr = getXmlHttp();                                
                 xhr.open('GET', 'http://localhost:8080/contacts/coworkers.json', true, email, pass); 
                   
-                // *** Command below will disable cache saving in IE. Because Cache-control: 'no-cache' doesn`t work correctly ***
+// *** Command below will disable cache saving in IE. Because Cache-control: 'no-cache' doesn`t work correctly ***
                 xhr.setRequestHeader("If-Modified-Since", "Sat, 1 Jan 2000 00:00:00 GMT");                      
                 xhr.onreadystatechange = function() {                      
                     if (xhr.readyState != 4) return;
@@ -119,8 +122,8 @@
                     }
                 }
             xhr.send();
-          // *** Init and sending request for Firefox ***
-            } else { alert('ajax');
+// *** Init and sending request for Firefox and Chrome ***
+            } else { 
                   var request = $.ajax({            
                       type: 'GET',                
                       url: 'http://localhost:8080/contacts/coworkers.json',                
@@ -128,10 +131,11 @@
                       crossDomain: true, 
                       cache : false,                                           
                       beforeSend: function(xhr){
+// *** If credentials set via setRequestHeader chrome doesn-t handle it correctly ***
                         if (!$.browser.chrome) {xhr.setRequestHeader('Authorization', 'Basic ' + btoa(email+':'+pass));}
                       },                       
                   });
-                  // *** msg - array of coworkers objects, which outputs ***
+// *** msg - array of coworkers objects, which outputs ***
                   request.done(function(msg){
                        contacts = msg;
                        outputList(contacts); 
@@ -139,7 +143,7 @@
                        $('.container').show();
 
                   });    
-                  // *** If request failed, error code outputs to console ***
+// *** If request failed, error code outputs to console ***
                   request.fail(function(obj){
                         console.log(obj.status);
                         $('#errorInvalidData').show();
@@ -147,7 +151,7 @@
             }
         }
 
-        // *** Formatted contacts output function *** 
+// *** Formatted contacts output function *** 
         function outputList(contacts){                        
             for (var i=0; i<contacts.length; i++){
                 $("tbody").append('<tr id="person-'+i+'"><td><div class="media"><a class="pull-left" href="#"><img class="media-object img-rounded" src="' + contacts[i].photoUrl + '" alt="'+contacts[i].firstName+'`s avatar image"></a><div class="media-body"><h4 class="media-heading"><span class="firstNameSpan">' + contacts[i].firstName + '</span> <span class="lastNameSpan">' + contacts[i].lastName + '</span></h4><address> E-mail: <a href="mailto:' + contacts[i].mail + '"><span class="mailSpan">' + contacts[i].mail + '</span></a><br/>Phone: <span class="phoneSpan"><a href="tel:' + contacts[i].phone + '">' + contacts[i].phone + '</a></span><br/>Location: <span class="locationSpan">' + contacts[i].location + '</span></address></div></div></td></tr>');
@@ -156,8 +160,8 @@
         };       
 
 
-        // *** Filtering function checks all fields of all contact-object to find matches with inputed value 
-        // and highlights fields with found matches *** 
+// *** Filtering function checks all fields of all contact-object to find matches with inputed value 
+// and highlights fields with found matches *** 
         function filter(){
             $('tbody tr:hidden').show();     
             $('.highlight').removeClass('highlight');       
@@ -206,11 +210,7 @@
           </div><!-- /.modal-body -->
       </div><!-- /.modal-content -->
     </div><!-- /.modal-dialog -->
-  </div><!-- /.modal -->
-
-      
-         
-      
+  </div><!-- /.modal -->      
 
 
      <div class="container" style="display: none;" >
